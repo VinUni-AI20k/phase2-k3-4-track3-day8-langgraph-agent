@@ -1,6 +1,10 @@
 """State schema for the Day 08 LangGraph lab.
 
-Students should extend the schema only when needed. Keep state lean and serializable.
+Design contract:
+- Append-only lists (Annotated[..., add]): messages, tool_results, errors, events
+- Scalar / "current value" fields: overwrite on each update
+- Node reads state → computes new value in local vars → returns partial update dict
+- NEVER mutate input state or append directly to lists in-place
 """
 
 from __future__ import annotations
@@ -33,6 +37,11 @@ class LabEvent(BaseModel):
 
 
 class ApprovalDecision(BaseModel):
+    """Plain serializable approval record — NOT a Pydantic instance in state.
+
+    Nodes return this as a dict via approval_node, stored directly in state["approval"].
+    """
+
     approved: bool = False
     reviewer: str = "mock-reviewer"
     comment: str = ""
@@ -41,10 +50,11 @@ class ApprovalDecision(BaseModel):
 class AgentState(TypedDict, total=False):
     """LangGraph state.
 
-    TODO(student): decide which fields should be append-only and which should be overwritten.
-    The current annotations give a safe starting point for auditability.
+    Append-only lists use Annotated[..., add] — reducer merges, never overwrites.
+    All other fields are scalars / "current value" — nodes overwrite on each update.
     """
 
+    # ── Scalar fields (overwrite) ──────────────────────────────────────
     thread_id: str
     scenario_id: str
     query: str
@@ -53,9 +63,14 @@ class AgentState(TypedDict, total=False):
     attempt: int
     max_attempts: int
     final_answer: str | None
-    # TODO(student): you will need additional fields for clarification, risky actions,
-    # approval decisions, and retry-loop gating. Add them as you implement nodes.
-    # Hint: check what your nodes return and what your routing functions read.
+
+    # ── New scalar fields for clarification, approval, retry gate ────
+    evaluation_result: str          # "needs_retry" | "success"  (evaluate_node → route_after_evaluate)
+    pending_question: str           # current clarification question (clarify → answer + metrics)
+    proposed_action: str            # risky action awaiting approval (risky_action_node → approval)
+    approval: dict[str, Any]        # plain dict matching ApprovalDecision schema
+
+    # ── Append-only lists (Annotated[..., add] reducer) ───────────────
     messages: Annotated[list[str], add]
     tool_results: Annotated[list[str], add]
     errors: Annotated[list[str], add]
@@ -90,6 +105,12 @@ def initial_state(scenario: Scenario) -> AgentState:
         "attempt": 0,
         "max_attempts": scenario.max_attempts,
         "final_answer": None,
+        # New scalar fields (empty / unset)
+        "evaluation_result": "",
+        "pending_question": "",
+        "proposed_action": "",
+        "approval": {},
+        # Append-only lists
         "messages": [],
         "tool_results": [],
         "errors": [],
@@ -98,5 +119,10 @@ def initial_state(scenario: Scenario) -> AgentState:
 
 
 def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:
-    """Create a normalized event payload."""
+    """Create a normalized event payload for appending to state["events"].
+
+    Nodes MUST return this as a list item, e.g.:
+        return {"events": [make_event("my_node", "completed", "did the thing")]}
+    NEVER do state["events"].append(make_event(...)) and return state.
+    """
     return LabEvent(node=node, event_type=event_type, message=message, metadata=metadata).model_dump()
