@@ -11,10 +11,13 @@ import importlib.util
 import os
 
 import pytest
+from dotenv import load_dotenv
 
 from langgraph_agent_lab.graph import build_graph
 from langgraph_agent_lab.persistence import build_checkpointer
 from langgraph_agent_lab.state import Route, Scenario, initial_state
+
+load_dotenv()
 
 LLM_KEY_CONFIGURED = any(
     os.getenv(key)

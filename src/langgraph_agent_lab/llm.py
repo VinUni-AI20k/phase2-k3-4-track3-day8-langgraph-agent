@@ -49,10 +49,15 @@ def get_llm(model: str | None = None, temperature: float = 0.0) -> Any:  # noqa:
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-openai") from exc
         selected_model = model or os.environ.get("LLM_MODEL") or "gpt-4o-mini"
-        return ChatOpenAI(
-            model=selected_model,
-            temperature=temperature,
-        )
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        kwargs: dict[str, Any] = {
+            "model": selected_model,
+            "temperature": temperature,
+            "api_key": os.getenv("OPENAI_API_KEY"),
+        }
+        if base_url:
+            kwargs["base_url"] = base_url
+        return ChatOpenAI(**kwargs)
 
     if os.getenv("ANTHROPIC_API_KEY"):
         try:

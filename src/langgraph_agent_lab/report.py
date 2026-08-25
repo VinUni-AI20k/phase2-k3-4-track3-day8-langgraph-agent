@@ -61,9 +61,15 @@ def render_report(metrics: MetricsReport) -> str:
 
 ## 1. Team / student
 
-- Name: _Complete before submission_
-- Repo/commit: _Complete before submission_
-- Date: _Complete before submission_
+- **Thành viên & Phân công nhiệm vụ:**
+  - **Phạm Trung Kiên** (`2A202601525`) — Phase 1: State schema + Node implementations
+  - **Ngô Thị Hằng** (`2A202601365`) — Phase 2: Routing logic + Graph wiring
+  - **Nguyễn Thị Hoàng Yến** (`2A202601959`) — Phase 3: Persistence & Checkpoint
+  - **Phạm Thế Dũng** (`2A202601985`) — Phase 4: Metrics, Evaluation & Report
+  - **Hoàng Tuấn Trung** (`2A202601807`) — Phase 5: Extensions (SQLite, Time travel)
+- **Repo:** https://github.com/phamkien1917/Track3-DAY23-E3
+- **Commit:** `91060d9a40355f09e4ec3b4ce3a1ae32ed3b8f16`
+- **Date:** 2026-08-25
 
 ## 2. Architecture
 
@@ -115,14 +121,13 @@ through `finalize` before `END`.
 
 ## 7. Extension work
 
-Three Phase 5 extensions are implemented:
+Five Phase 5 extensions are implemented:
 
-1. **SQLite persistence:** the default lab run writes checkpoints in WAL mode,
-   using one `thread_id` per scenario.
-2. **Time-travel inspection:** `make inspect-history` exports compact checkpoint
-   snapshots for `thread-S01_simple` to `outputs/state_history.json`.
-3. **Graph diagram:** `make graph-diagram` exports the compiled workflow Mermaid
-   diagram to `outputs/graph.mmd` via `graph.get_graph().draw_mermaid()`.
+1. **SQLite persistence:** `SqliteSaver` in WAL mode with per-scenario `thread_id`.
+2. **Time-travel inspection:** `make inspect-history` exports checkpoint snapshots.
+3. **Graph diagram:** `make graph-diagram` exports Mermaid diagram to `outputs/graph.mmd`.
+4. **LLM-as-judge:** `evaluate_node` uses structured LLM evaluation to judge tool outputs.
+5. **Streamlit Web UI:** `streamlit run streamlit_app.py` interactive demo dashboard.
 
 ## 8. Improvement plan
 

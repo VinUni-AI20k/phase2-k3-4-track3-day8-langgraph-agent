@@ -24,5 +24,8 @@ graph-diagram:
 inspect-history:
 	python -m langgraph_agent_lab.cli inspect-history --config configs/lab.yaml --thread-id thread-S01_simple --output outputs/state_history.json
 
+demo:
+	streamlit run streamlit_app.py
+
 clean:
 	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov dist build *.egg-info outputs/*.json

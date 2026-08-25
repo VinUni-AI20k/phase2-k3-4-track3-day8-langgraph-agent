@@ -49,9 +49,18 @@ class IntentClassification(BaseModel):
         default="low",
         description="'high' for risky actions (refunds, deletions, cancellations), 'low' otherwise",
     )
+class EvaluationDecision(BaseModel):
+    """Structured output schema for LLM-as-judge tool evaluation."""
+
+    verdict: str = Field(
+        description=(
+            "Verdict: 'success' if the tool output is satisfactory and valid, "
+            "or 'needs_retry' if it contains errors, timeouts, or failure indications."
+        )
+    )
     reasoning: str = Field(
         default="",
-        description="Brief reasoning explaining the route choice",
+        description="Explanation for the evaluation verdict.",
     )
 
 
@@ -143,18 +152,46 @@ def tool_node(state: AgentState) -> dict[str, Any]:
 def evaluate_node(state: AgentState) -> dict[str, Any]:
     """Evaluate tool results — the retry-loop gate.
 
-    Checks whether the latest tool result is satisfactory or needs retry.
-    Sets evaluation_result to 'needs_retry' or 'success'.
+    Uses LLM-as-judge to evaluate whether the latest tool output is satisfactory
+    or requires retry. Falls back gracefully to heuristic checks when offline.
     """
     tool_results = state.get("tool_results", [])
     latest_result = tool_results[-1] if tool_results else ""
+    query = state.get("query", "")
 
+    # Fast heuristic check for obvious failure markers
     if "ERROR" in latest_result:
         eval_result = "needs_retry"
         message = f"Evaluation failed: {latest_result}"
-    else:
+        return {
+            "evaluation_result": eval_result,
+            "events": [make_event("evaluate", "completed", message, result=eval_result)],
+        }
+
+    # LLM-as-judge evaluation
+    try:
+        llm = get_llm(temperature=0.0)
+        judge = llm.with_structured_output(EvaluationDecision)
+        prompt = (
+            "You are an automated evaluation judge for a customer support workflow.\n"
+            "Assess whether the tool result satisfactorily fulfills the query or requires "
+            "a retry.\n\n"
+            f"User Query: {query}\n"
+            f"Tool Result: {latest_result}\n\n"
+            "Output 'success' if valid and helpful, or 'needs_retry' if failed or incomplete."
+        )
+        judge_res = judge.invoke(prompt)
+        if isinstance(judge_res, EvaluationDecision):
+            verdict = judge_res.verdict.strip().lower()
+            eval_result = "needs_retry" if "retry" in verdict else "success"
+            reasoning = judge_res.reasoning
+        else:
+            eval_result = "success"
+            reasoning = "Tool output accepted by evaluator"
+        message = f"Judge verdict ({eval_result}): {reasoning}"
+    except Exception:
         eval_result = "success"
-        message = "Evaluation passed: tool output verified"
+        message = "Evaluation passed (heuristic verified)"
 
     return {
         "evaluation_result": eval_result,
