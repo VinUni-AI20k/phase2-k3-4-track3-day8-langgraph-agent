@@ -12,9 +12,14 @@ Usage in nodes:
 from __future__ import annotations
 
 import os
+from typing import Any
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-def get_llm(model: str | None = None, temperature: float = 0.0):
+def get_llm(model: str | None = None, temperature: float = 0.0) -> Any:  # noqa: ANN401
     """Create an LLM client from environment configuration.
 
     Checks for API keys in this order:
@@ -26,11 +31,14 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
     """
     if os.getenv("GEMINI_API_KEY"):
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_google_genai import (  # type: ignore[import-not-found]
+                ChatGoogleGenerativeAI,
+            )
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-google-genai") from exc
+        selected_model = model or os.environ.get("LLM_MODEL") or "gemini-2.5-flash"
         return ChatGoogleGenerativeAI(
-            model=model or os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+            model=selected_model,
             google_api_key=os.getenv("GEMINI_API_KEY"),
             temperature=temperature,
         )
@@ -40,18 +48,25 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
             from langchain_openai import ChatOpenAI
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-openai") from exc
-        return ChatOpenAI(
-            model=model or os.getenv("LLM_MODEL", "gpt-4o-mini"),
-            temperature=temperature,
-        )
+        selected_model = model or os.environ.get("LLM_MODEL") or "gpt-4o-mini"
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        kwargs: dict[str, Any] = {
+            "model": selected_model,
+            "temperature": temperature,
+            "api_key": os.getenv("OPENAI_API_KEY"),
+        }
+        if base_url:
+            kwargs["base_url"] = base_url
+        return ChatOpenAI(**kwargs)
 
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
-            from langchain_anthropic import ChatAnthropic
+            from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-anthropic") from exc
+        selected_model = model or os.environ.get("LLM_MODEL") or "claude-sonnet-4-20250514"
         return ChatAnthropic(
-            model=model or os.getenv("LLM_MODEL", "claude-sonnet-4-20250514"),
+            model=selected_model,
             temperature=temperature,
         )
 

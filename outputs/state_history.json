@@ -1,0 +1,72 @@
+[
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0608-c4e8-64f6-8004-b7fa969e3bf8",
+    "step": 4,
+    "next": [],
+    "route": "simple",
+    "attempt": 0,
+    "final_answer_present": true,
+    "events_count": 4
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0608-c4df-6af2-8003-5182bcc98949",
+    "step": 3,
+    "next": [
+      "finalize"
+    ],
+    "route": "simple",
+    "attempt": 0,
+    "final_answer_present": true,
+    "events_count": 3
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0608-a16e-6b51-8002-e12b9acb383e",
+    "step": 2,
+    "next": [
+      "answer"
+    ],
+    "route": "simple",
+    "attempt": 0,
+    "final_answer_present": false,
+    "events_count": 2
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0607-db63-6e92-8001-9e224bf5c3ca",
+    "step": 1,
+    "next": [
+      "classify"
+    ],
+    "route": "",
+    "attempt": 0,
+    "final_answer_present": false,
+    "events_count": 1
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0607-db50-6758-8000-c1dd2449b33d",
+    "step": 0,
+    "next": [
+      "intake"
+    ],
+    "route": "",
+    "attempt": 0,
+    "final_answer_present": false,
+    "events_count": 0
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a0607-dac8-66e8-bfff-5864cac3e841",
+    "step": -1,
+    "next": [
+      "__start__"
+    ],
+    "route": null,
+    "attempt": null,
+    "final_answer_present": false,
+    "events_count": 0
+  }
+]
