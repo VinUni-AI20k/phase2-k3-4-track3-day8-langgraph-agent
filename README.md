@@ -1,61 +1,61 @@
-# Day 08 Lab — LangGraph Agentic Orchestration
+# Day 08 Lab - Điều phối Agent bằng LangGraph
 
-Build a production-style LangGraph workflow for a support-ticket agent with state management, conditional routing, retry loops, human-in-the-loop approval, persistence, and metrics.
+Xây dựng một workflow LangGraph theo phong cách production cho agent xử lý ticket hỗ trợ, bao gồm quản lý state, định tuyến có điều kiện, vòng lặp retry, phê duyệt human-in-the-loop, persistence và metrics.
 
-This is a **starter skeleton**. All node implementations, routing logic, and graph wiring are left as `TODO(student)` — you must build them from scratch.
+Đây là **starter skeleton**. Toàn bộ phần triển khai node, logic routing và wiring graph đang được để dưới dạng `TODO(student)` - bạn cần tự xây dựng từ đầu.
 
 ---
 
-## How you will be graded
+## Cách chấm điểm
 
-| Category | Points | What we look for |
+| Hạng mục | Điểm | Tiêu chí đánh giá |
 |---|---:|---|
-| Architecture & state schema | 15 | Typed state with correct reducers, student-added fields, lean serializable state |
-| Graph construction & wiring | 15 | All nodes registered, edges correct, conditional edges work, graph compiles |
-| LLM integration | 15 | classify_node + answer_node use real LLM calls (structured output, grounded generation) |
-| Graph behavior | 20 | All scenario routes correct, bounded retry loop, HITL approval path, all routes terminate |
-| Persistence & recovery | 10 | Checkpointer wired, thread_id per run, state history or crash-resume evidence |
-| Metrics & tests | 15 | `metrics.json` valid, scenario coverage, tests pass, meaningful counts |
-| Report & demo | 10 | Architecture explanation, metrics table, failure analysis, improvement ideas |
+| Kiến trúc & schema state | 15 | State có type rõ ràng với reducer đúng, có field sinh viên tự thêm, state gọn và serializable |
+| Xây dựng & wiring graph | 15 | Đăng ký đủ node, edge đúng, conditional edge hoạt động, graph compile được |
+| Tích hợp LLM | 15 | `classify_node` + `answer_node` dùng LLM thật (structured output, generation có grounding) |
+| Hành vi graph | 20 | Tất cả scenario đi đúng route, retry loop có giới hạn, có luồng HITL approval, mọi route đều kết thúc |
+| Persistence & recovery | 10 | Có nối checkpointer, mỗi lần chạy có `thread_id`, có bằng chứng state history hoặc crash-resume |
+| Metrics & test | 15 | `metrics.json` hợp lệ, cover các scenario, test pass, số liệu có ý nghĩa |
+| Report & demo | 10 | Giải thích kiến trúc, bảng metrics, phân tích lỗi, ý tưởng cải tiến |
 
-**Grade bands:**
-- **90–100**: Production-quality graph + LLM integration + metrics + report + at least one bonus extension
-- **75–89**: Core graph works with LLM, metrics valid, report explains trade-offs
-- **60–74**: Graph mostly works but LLM integration, persistence, or report incomplete
-- **< 60**: Does not run, hard-codes scenarios, or lacks LLM integration/metrics/report
+**Khung điểm:**
+- **90-100**: Graph chất lượng production + tích hợp LLM + metrics + report + ít nhất một bonus extension
+- **75-89**: Core graph chạy được với LLM, metrics hợp lệ, report giải thích trade-off
+- **60-74**: Graph cơ bản chạy được nhưng tích hợp LLM, persistence hoặc report còn thiếu
+- **< 60**: Không chạy được, hard-code theo scenario, hoặc thiếu tích hợp LLM/metrics/report
 
-> **Critical rule**: Do NOT hard-code answers to specific scenario queries. Your graph must route based on **LLM classification and state logic**, not by matching exact scenario IDs. We grade with additional hidden scenarios.
+> **Quy tắc quan trọng**: KHÔNG hard-code câu trả lời cho từng scenario cụ thể. Graph của bạn phải route dựa trên **LLM classification và logic state**, không phải so khớp chính xác scenario ID. Bài chấm sẽ có thêm các scenario ẩn.
 
 ---
 
-## LLM Integration Requirements
+## Yêu cầu tích hợp LLM
 
-This lab requires real LLM API calls in specific nodes:
+Lab này yêu cầu gọi API LLM thật trong một số node cụ thể:
 
-| Node | Requirement | Pattern |
+| Node | Yêu cầu | Pattern |
 |---|---|---|
-| `classify_node` | **MUST use LLM** | Structured output (`.with_structured_output()`) for intent classification |
-| `answer_node` | **MUST use LLM** | Grounded response generation using tool_results/context |
-| `evaluate_node` | **SHOULD use LLM** (bonus) | LLM-as-judge to evaluate tool results quality |
+| `classify_node` | **BẮT BUỘC dùng LLM** | Structured output (`.with_structured_output()`) để phân loại intent |
+| `answer_node` | **BẮT BUỘC dùng LLM** | Sinh câu trả lời có grounding dựa trên `tool_results`/context |
+| `evaluate_node` | **NÊN dùng LLM** (bonus) | Dùng LLM-as-judge để đánh giá chất lượng kết quả tool |
 
-A helper is provided in `src/langgraph_agent_lab/llm.py` — it reads your API key from `.env` and returns a LangChain chat model.
+Helper đã được cung cấp trong `src/langgraph_agent_lab/llm.py` - file này đọc API key từ `.env` và trả về một LangChain chat model.
 
 ```bash
-# Install your preferred LLM provider
-pip install langchain-openai    # for OpenAI
-# OR
-pip install langchain-anthropic  # for Anthropic
+# Cài provider LLM bạn muốn dùng
+pip install langchain-openai    # cho OpenAI
+# HOẶC
+pip install langchain-anthropic  # cho Anthropic
 
-# Configure .env
+# Cấu hình .env
 cp .env.example .env
-# Edit .env and set OPENAI_API_KEY or ANTHROPIC_API_KEY
+# Sửa .env và đặt OPENAI_API_KEY hoặc ANTHROPIC_API_KEY
 ```
 
 ---
 
-## Understanding `scenarios.jsonl`
+## Hiểu về `scenarios.jsonl`
 
-The file `data/sample/scenarios.jsonl` contains **7 sample scenarios** your graph must handle:
+File `data/sample/scenarios.jsonl` chứa **7 sample scenario** mà graph của bạn phải xử lý:
 
 ```jsonl
 {"id":"S01_simple",      "query":"How do I reset my password?",                          "expected_route":"simple"}
@@ -67,54 +67,54 @@ The file `data/sample/scenarios.jsonl` contains **7 sample scenarios** your grap
 {"id":"S07_dead_letter", "query":"System failure cannot recover after multiple attempts", "expected_route":"error", "max_attempts":1}
 ```
 
-### What each field means
+### Ý nghĩa từng field
 
-| Field | Purpose |
+| Field | Mục đích |
 |---|---|
-| `id` | Unique scenario identifier — used in metrics output |
-| `query` | The user's support-ticket text — input to your graph |
-| `expected_route` | Which route your `classify_node` should pick: `simple`, `tool`, `missing_info`, `risky`, or `error` |
-| `requires_approval` | If `true`, your graph must hit the approval/HITL node before answering |
-| `should_retry` | If `true`, scenario simulates transient tool failure requiring retry |
-| `max_attempts` | Override retry limit (default 3). S07 sets this to 1, so it exhausts retries immediately → dead letter |
-| `tags` | Descriptive labels for your reference |
+| `id` | Mã định danh scenario duy nhất - dùng trong output metrics |
+| `query` | Nội dung ticket hỗ trợ của người dùng - input cho graph |
+| `expected_route` | Route mà `classify_node` của bạn nên chọn: `simple`, `tool`, `missing_info`, `risky`, hoặc `error` |
+| `requires_approval` | Nếu là `true`, graph phải đi qua approval/HITL node trước khi trả lời |
+| `should_retry` | Nếu là `true`, scenario mô phỏng lỗi tool tạm thời và cần retry |
+| `max_attempts` | Ghi đè giới hạn retry (mặc định 3). S07 đặt giá trị này là 1, nên retry cạn ngay lập tức -> dead letter |
+| `tags` | Nhãn mô tả để bạn tham khảo |
 
-### How scenarios flow through your code
+### Luồng scenario đi qua code
 
+```text
+scenarios.jsonl  ->  scenarios.py load dữ liệu  ->  cli.py chạy từng scenario qua graph
+                                                   ->  metrics.py thu thập kết quả
+                                                   ->  outputs/metrics.json
 ```
-scenarios.jsonl  →  scenarios.py loads them  →  cli.py runs each through your graph
-                                              →  metrics.py collects results
-                                              →  outputs/metrics.json
-```
 
-1. `make run-scenarios` reads `data/sample/scenarios.jsonl`
-2. For each scenario, it calls `initial_state(scenario)` → `graph.invoke(state)`
-3. After execution, it checks: did `actual_route` match `expected_route`? Did HITL fire when required?
-4. Results go to `outputs/metrics.json`
+1. `make run-scenarios` đọc `data/sample/scenarios.jsonl`
+2. Với mỗi scenario, chương trình gọi `initial_state(scenario)` -> `graph.invoke(state)`
+3. Sau khi chạy xong, chương trình kiểm tra: `actual_route` có khớp `expected_route` không? HITL có được kích hoạt khi cần không?
+4. Kết quả được ghi vào `outputs/metrics.json`
 
-### How to design your classification
+### Cách thiết kế classification
 
-Your `classify_node` should use an LLM to classify intent. Design a prompt that routes queries:
+`classify_node` nên dùng LLM để phân loại intent. Hãy thiết kế prompt để route query:
 
 | Route | Intent |
 |---|---|
-| `risky` | Actions with side effects: refunds, deletions, sending emails, cancellations |
-| `tool` | Information lookups: order status, tracking, search queries |
-| `missing_info` | Vague/incomplete queries lacking actionable context |
-| `error` | System failures: timeouts, crashes, service unavailable |
-| `simple` | General questions answerable without tools or actions |
+| `risky` | Hành động có side effect: refund, xóa dữ liệu, gửi email, hủy dịch vụ |
+| `tool` | Tra cứu thông tin: trạng thái đơn hàng, tracking, search query |
+| `missing_info` | Query mơ hồ/chưa đầy đủ, thiếu context để hành động |
+| `error` | Lỗi hệ thống: timeout, crash, service unavailable |
+| `simple` | Câu hỏi chung có thể trả lời không cần tool hoặc action |
 
-**Priority matters**: risky > tool > missing_info > error > simple. Design your LLM prompt to respect this priority.
+**Thứ tự ưu tiên rất quan trọng**: risky > tool > missing_info > error > simple. Hãy thiết kế prompt LLM để tôn trọng thứ tự ưu tiên này.
 
-### Adding your own test scenarios
+### Thêm test scenario của riêng bạn
 
-You can add extra lines to `scenarios.jsonl` to test edge cases:
+Bạn có thể thêm dòng mới vào `scenarios.jsonl` để test edge case:
 
 ```jsonl
 {"id":"S08_custom","query":"Cancel my subscription immediately","expected_route":"risky","requires_approval":true,"tags":["custom"]}
 ```
 
-The grading script will also test with scenarios you haven't seen.
+Script chấm điểm cũng sẽ test bằng các scenario bạn chưa nhìn thấy.
 
 ---
 
@@ -124,123 +124,123 @@ The grading script will also test with scenarios you haven't seen.
 # Option A: conda
 conda activate ai-lab
 pip install -e '.[dev]'
-pip install langchain-openai  # or langchain-anthropic
+pip install langchain-openai  # hoặc langchain-anthropic
 
 # Option B: venv
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
-pip install langchain-openai  # or langchain-anthropic
+pip install langchain-openai  # hoặc langchain-anthropic
 
-# Configure LLM
+# Cấu hình LLM
 cp .env.example .env
-# Edit .env — set your API key
+# Sửa .env - đặt API key của bạn
 
-# Verify setup
-make test  # some tests will fail until you implement TODOs
+# Kiểm tra setup
+make test  # một số test sẽ fail cho đến khi bạn implement các TODO
 ```
 
 ---
 
-## Step-by-step workflow
+## Workflow từng bước
 
-### Phase 1: State + nodes (0–90 min) — worth 30 points
+### Phase 1: State + nodes (0-90 phút) - trị giá 30 điểm
 
-1. **`state.py`** — Review existing fields. Add missing fields as you discover them:
-   - `evaluation_result` for retry loop gate
-   - `pending_question` for clarification flow
-   - `proposed_action` for risky action flow
-   - `approval` for HITL decisions
+1. **`state.py`** - Xem lại các field hiện có. Thêm field còn thiếu khi bạn phát hiện cần dùng:
+   - `evaluation_result` cho gate của retry loop
+   - `pending_question` cho luồng hỏi làm rõ
+   - `proposed_action` cho luồng hành động rủi ro
+   - `approval` cho quyết định HITL
 
-2. **`llm.py`** — Review the helper. Configure `.env` with your API key.
+2. **`llm.py`** - Xem lại helper. Cấu hình `.env` với API key của bạn.
 
-3. **`nodes.py`** — Implement all 10 node functions:
-   - `classify_node`: **LLM + structured output** for intent classification
-   - `tool_node`: mock tool with error simulation
-   - `evaluate_node`: tool result quality check (LLM-as-judge for bonus)
-   - `answer_node`: **LLM-generated** grounded response
-   - `ask_clarification_node`: generate clarification question
-   - `risky_action_node`: prepare action for approval
-   - `approval_node`: mock approval with optional interrupt()
-   - `retry_or_fallback_node`: increment attempt counter
-   - `dead_letter_node`: handle max retry exhaustion
-   - `finalize_node`: emit final audit event
+3. **`nodes.py`** - Implement toàn bộ 10 node function:
+   - `classify_node`: **LLM + structured output** để phân loại intent
+   - `tool_node`: mock tool có mô phỏng lỗi
+   - `evaluate_node`: kiểm tra chất lượng kết quả tool (LLM-as-judge cho bonus)
+   - `answer_node`: câu trả lời **do LLM sinh ra** và có grounding
+   - `ask_clarification_node`: tạo câu hỏi làm rõ
+   - `risky_action_node`: chuẩn bị action để phê duyệt
+   - `approval_node`: mock approval với `interrupt()` tùy chọn
+   - `retry_or_fallback_node`: tăng bộ đếm attempt
+   - `dead_letter_node`: xử lý khi vượt giới hạn retry
+   - `finalize_node`: phát final audit event
 
-### Phase 2: Routing + graph (90–150 min) — worth 35 points
+### Phase 2: Routing + graph (90-150 phút) - trị giá 35 điểm
 
-4. **`routing.py`** — Implement all 4 routing functions from scratch
-5. **`graph.py`** — Build the complete StateGraph:
-   - Import and register all 11 nodes
-   - Wire fixed + conditional edges
-   - All paths must terminate at finalize → END
-6. **Verify**: `make test` and `make run-scenarios`
+4. **`routing.py`** - Implement toàn bộ 4 routing function từ đầu
+5. **`graph.py`** - Xây dựng StateGraph hoàn chỉnh:
+   - Import và đăng ký toàn bộ 11 node
+   - Wire fixed edge + conditional edge
+   - Mọi path phải kết thúc ở finalize -> END
+6. **Kiểm tra**: `make test` và `make run-scenarios`
 
-### Phase 3: Persistence (150–180 min) — worth 10 points
+### Phase 3: Persistence (150-180 phút) - trị giá 10 điểm
 
-7. **`persistence.py`** — Implement SQLite checkpointer
-   - Show evidence: thread_id per run, state history, or crash-resume
+7. **`persistence.py`** - Implement SQLite checkpointer
+   - Đưa ra bằng chứng: mỗi lần chạy có `thread_id`, state history hoặc crash-resume
 
-### Phase 4: Metrics & report (180–240 min) — worth 25 points
+### Phase 4: Metrics & report (180-240 phút) - trị giá 25 điểm
 
-8. **`report.py`** — Implement `render_report()` from metrics data
-9. **Run**: `make run-scenarios` → `outputs/metrics.json`
+8. **`report.py`** - Implement `render_report()` từ metrics data
+9. **Chạy**: `make run-scenarios` -> `outputs/metrics.json`
 10. **Validate**: `make grade-local`
-11. **Report**: Fill `reports/lab_report.md`
+11. **Report**: Điền `reports/lab_report.md`
 
-### Phase 5: Extensions (240+ min) — push toward 90+
+### Phase 5: Extensions (240+ phút) - hướng tới 90+ điểm
 
-Pick one or more:
-- **Parallel fan-out**: Use `Send()` for concurrent tool calls
-- **Real HITL**: `LANGGRAPH_INTERRUPT=true` with `interrupt()`
-- **Streamlit UI**: Build approval/reject interface
-- **Time travel**: `get_state_history()` replay
-- **Crash recovery**: SQLite checkpoint survives process kill
+Chọn một hoặc nhiều mục:
+- **Parallel fan-out**: Dùng `Send()` để gọi tool song song
+- **Real HITL**: `LANGGRAPH_INTERRUPT=true` với `interrupt()`
+- **Streamlit UI**: Xây giao diện approval/reject
+- **Time travel**: replay bằng `get_state_history()`
+- **Crash recovery**: SQLite checkpoint vẫn tồn tại sau khi process bị kill
 - **Graph diagram**: `graph.get_graph().draw_mermaid()`
 
 ---
 
-## Make commands
+## Lệnh Make
 
-| Command | What it does |
+| Command | Chức năng |
 |---|---|
-| `make install` | Install project + dev dependencies |
-| `make test` | Run pytest |
-| `make lint` | Run ruff linter |
-| `make typecheck` | Run mypy type checker |
-| `make run-scenarios` | Execute all scenarios → `outputs/metrics.json` |
-| `make grade-local` | Validate metrics.json schema |
-| `make clean` | Remove caches and generated files |
+| `make install` | Cài project + dev dependencies |
+| `make test` | Chạy pytest |
+| `make lint` | Chạy ruff linter |
+| `make typecheck` | Chạy mypy type checker |
+| `make run-scenarios` | Chạy toàn bộ scenario -> `outputs/metrics.json` |
+| `make grade-local` | Validate schema của `metrics.json` |
+| `make clean` | Xóa cache và file sinh ra |
 
 ---
 
-## Submission checklist
+## Checklist nộp bài
 
-- [ ] All `TODO(student)` sections implemented
-- [ ] `.env` configured with LLM API key
-- [ ] `classify_node` uses real LLM call with structured output
-- [ ] `answer_node` uses real LLM call for grounded responses
-- [ ] `make test` passes
-- [ ] `make run-scenarios` generates valid `outputs/metrics.json`
-- [ ] `make grade-local` passes validation
-- [ ] `reports/lab_report.md` completed with architecture, metrics, and analysis
-- [ ] Can explain at least one route and one failure mode during demo
+- [ ] Đã implement toàn bộ phần `TODO(student)`
+- [ ] `.env` đã cấu hình LLM API key
+- [ ] `classify_node` dùng lệnh gọi LLM thật với structured output
+- [ ] `answer_node` dùng lệnh gọi LLM thật để tạo câu trả lời có grounding
+- [ ] `make test` pass
+- [ ] `make run-scenarios` tạo `outputs/metrics.json` hợp lệ
+- [ ] `make grade-local` pass validation
+- [ ] `reports/lab_report.md` hoàn thành với kiến trúc, metrics và phân tích
+- [ ] Có thể giải thích ít nhất một route và một failure mode khi demo
 
-**For 90+ points, also include:**
-- [ ] At least one bonus extension (persistence, parallel fan-out, HITL, time travel, diagram)
-- [ ] Evidence of extension in report (screenshot, log output, or diagram)
+**Để đạt 90+ điểm, cần thêm:**
+- [ ] Ít nhất một bonus extension (persistence, parallel fan-out, HITL, time travel, diagram)
+- [ ] Có bằng chứng về extension trong report (screenshot, log output hoặc diagram)
 
 ---
 
-## Common pitfalls
+## Lỗi thường gặp
 
-1. **Missing state fields**: The starter intentionally omits some fields from `AgentState`. You must add `evaluation_result`, `pending_question`, `proposed_action`, and `approval` as you implement nodes that need them.
+1. **Thiếu state field**: Starter cố ý bỏ thiếu một số field trong `AgentState`. Bạn phải thêm `evaluation_result`, `pending_question`, `proposed_action` và `approval` khi implement các node cần dùng chúng.
 
-2. **LLM structured output**: Use `.with_structured_output(YourModel)` to get reliable classification. Raw text parsing is fragile and will fail on hidden test scenarios.
+2. **LLM structured output**: Dùng `.with_structured_output(YourModel)` để classification ổn định. Parse raw text rất dễ lỗi và sẽ fail với hidden test scenario.
 
-3. **Unbounded retry**: Always check `attempt < max_attempts` in `route_after_retry`. Without this bound, error scenarios loop forever.
+3. **Retry không giới hạn**: Luôn kiểm tra `attempt < max_attempts` trong `route_after_retry`. Nếu không có giới hạn này, error scenario sẽ loop mãi.
 
-4. **Graph wiring**: Every path must end at `finalize → END`. Missing this means the graph hangs for some scenarios.
+4. **Graph wiring**: Mọi path phải kết thúc tại `finalize -> END`. Nếu thiếu, graph sẽ bị treo với một số scenario.
 
-5. **SqliteSaver API**: In `langgraph-checkpoint-sqlite` 3.x, use `SqliteSaver(conn=sqlite3.connect(...))` not `SqliteSaver.from_conn_string()`.
+5. **SqliteSaver API**: Trong `langgraph-checkpoint-sqlite` 3.x, dùng `SqliteSaver(conn=sqlite3.connect(...))`, không dùng `SqliteSaver.from_conn_string()`.
 
-6. **API key not set**: If you get "No LLM API key found", check your `.env` file and make sure it's loaded (use `python-dotenv` or export manually).
+6. **Chưa đặt API key**: Nếu gặp lỗi "No LLM API key found", kiểm tra file `.env` và đảm bảo file được load (dùng `python-dotenv` hoặc export thủ công).
