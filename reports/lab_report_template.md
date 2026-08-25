@@ -2,9 +2,9 @@
 
 ## 1. Team / student
 
-- Name:
-- Repo/commit:
-- Date:
+- Name: Trần Hải Quân - 2A202601521
+- Repo/commit: `phase2-k3-4-track3-day8-langgraph-agent`
+- Date: 2026-08-25
 
 ## 2. Architecture
 
