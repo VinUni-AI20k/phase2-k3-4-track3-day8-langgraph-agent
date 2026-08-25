@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from time import perf_counter
 from typing import Annotated
 
 import typer
@@ -30,12 +31,28 @@ def run_scenarios(
     checkpointer = build_checkpointer(cfg.get("checkpointer", "memory"), cfg.get("database_url"))
     graph = build_graph(checkpointer=checkpointer)
     metrics = []
+    state_history_verified = checkpointer is not None
     for scenario in scenarios:
         state = initial_state(scenario)
         run_config = {"configurable": {"thread_id": state["thread_id"]}}
+        started_at = perf_counter()
         final_state = graph.invoke(state, config=run_config)
-        metrics.append(metric_from_state(final_state, scenario.expected_route.value, scenario.requires_approval))
-    report = summarize_metrics(metrics)
+        latency_ms = round((perf_counter() - started_at) * 1000)
+        metrics.append(
+            metric_from_state(
+                final_state,
+                scenario.expected_route.value,
+                scenario.requires_approval,
+                latency_ms=latency_ms,
+            )
+        )
+        try:
+            latest_snapshot = next(graph.get_state_history(run_config), None)
+        except Exception:
+            state_history_verified = False
+        else:
+            state_history_verified = state_history_verified and latest_snapshot is not None
+    report = summarize_metrics(metrics, resume_success=state_history_verified)
     write_metrics(report, output)
     if cfg.get("report_path"):
         write_report(report, cfg["report_path"])
