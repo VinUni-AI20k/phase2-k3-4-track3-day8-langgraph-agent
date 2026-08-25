@@ -2,10 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Any
+import sqlite3
+from pathlib import Path
 
 
-def build_checkpointer(kind: str = "memory", database_url: str | None = None) -> Any | None:
+def _sqlite_database_path(database_url: str | None) -> str:
+    """Resolve a plain SQLite path or a ``sqlite:///`` URL."""
+    if not database_url:
+        return "checkpoints.db"
+    if database_url.startswith("sqlite:///"):
+        return database_url.removeprefix("sqlite:///")
+    if "://" in database_url:
+        raise ValueError("SQLite database_url must be a file path or sqlite:/// URL")
+    return database_url
+
+
+def build_checkpointer(kind: str = "memory", database_url: str | None = None) -> object | None:
     """Return a LangGraph checkpointer.
 
     TODO(student): implement SQLite support for the persistence extension track.
@@ -23,10 +35,21 @@ def build_checkpointer(kind: str = "memory", database_url: str | None = None) ->
 
         return MemorySaver()
     if kind == "sqlite":
-        raise NotImplementedError(
-            "TODO(student): implement SQLite checkpointer. "
-            "Hint: pip install langgraph-checkpoint-sqlite, then use SqliteSaver"
-        )
+        try:
+            from langgraph.checkpoint.sqlite import SqliteSaver
+        except ImportError as exc:
+            raise RuntimeError(
+                "Install SQLite persistence support: pip install -e '.[sqlite]'"
+            ) from exc
+
+        path = _sqlite_database_path(database_url)
+        if path != ":memory:":
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+        connection = sqlite3.connect(path, check_same_thread=False)
+        connection.execute("PRAGMA journal_mode=WAL")
+        checkpointer = SqliteSaver(connection)
+        checkpointer.setup()
+        return checkpointer
     if kind == "postgres":
         raise NotImplementedError(
             "TODO(student): implement Postgres checkpointer (optional extension)"
