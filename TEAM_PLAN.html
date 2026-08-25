@@ -1,0 +1,774 @@
+<title>Sprint 90 Phút — LangGraph Agent Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+:root{
+  --ground:#EDEEF0; --surface:#FFFFFF; --surface-2:#F6F7F9;
+  --ink:#14171C; --ink-2:#39404C; --muted:#5C6472; --line:#D5D9E0; --line-soft:#E4E7EC;
+  --accent:#1F4FD8; --accent-soft:#E4EAFC; --accent-ink:#1B3FAA;
+  --ok:#126B4F; --ok-soft:#DCF0E7;
+  --warn:#8F6206; --warn-soft:#F8EED4;
+  --crit:#A8362A; --crit-soft:#F8E2DE;
+  --shadow:0 1px 2px rgba(20,23,28,.06), 0 8px 24px -16px rgba(20,23,28,.30);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1116; --surface:#161A20; --surface-2:#1C222A;
+    --ink:#E7EAEF; --ink-2:#C2C8D2; --muted:#939CAB; --line:#272E38; --line-soft:#212832;
+    --accent:#84A4FF; --accent-soft:#1A2540; --accent-ink:#A9C0FF;
+    --ok:#5CD3A6; --ok-soft:#123028;
+    --warn:#E3B851; --warn-soft:#32280F;
+    --crit:#F49484; --crit-soft:#381914;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1116; --surface:#161A20; --surface-2:#1C222A;
+  --ink:#E7EAEF; --ink-2:#C2C8D2; --muted:#939CAB; --line:#272E38; --line-soft:#212832;
+  --accent:#84A4FF; --accent-soft:#1A2540; --accent-ink:#A9C0FF;
+  --ok:#5CD3A6; --ok-soft:#123028;
+  --warn:#E3B851; --warn-soft:#32280F;
+  --crit:#F49484; --crit-soft:#381914;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 28px -18px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 24px 96px}
+h1,h2,h3,h4{font-family:Archivo,system-ui,sans-serif; text-wrap:balance; margin:0}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+a{color:var(--accent-ink)}
+
+/* ── header ─────────────────────────────── */
+header.masthead{
+  border-bottom:1px solid var(--line); background:var(--surface);
+  padding:44px 0 34px; margin-bottom:40px;
+}
+.eyebrow{
+  font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);
+}
+h1{font-size:clamp(30px,4.6vw,46px); line-height:1.06; letter-spacing:-.024em; margin:10px 0 14px; font-weight:700}
+.lede{max-width:64ch; color:var(--ink-2); font-size:17px; margin:0}
+.facts{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px}
+.fact{
+  display:flex; flex-direction:column; gap:1px; padding:9px 14px;
+  border:1px solid var(--line); border-radius:var(--radius); background:var(--surface-2);
+}
+.fact b{font-family:Archivo,sans-serif; font-size:18px; letter-spacing:-.01em; font-variant-numeric:tabular-nums}
+.fact span{font-size:11.5px; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; font-family:"JetBrains Mono",monospace}
+
+/* ── sections ───────────────────────────── */
+section{margin-bottom:48px}
+.sec-head{display:flex; align-items:baseline; gap:14px; margin-bottom:6px; flex-wrap:wrap}
+.sec-head h2{font-size:23px; letter-spacing:-.015em; font-weight:600}
+.sec-tag{
+  font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.08em;
+  color:var(--accent-ink); background:var(--accent-soft); padding:3px 8px; border-radius:5px;
+}
+.sec-sub{color:var(--muted); max-width:70ch; margin:0 0 22px; font-size:14.5px}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+.pad{padding:22px 24px}
+
+/* ── contract ───────────────────────────── */
+.contract{border-left:3px solid var(--accent)}
+.contract-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:0}
+.contract-grid > div{padding:20px 22px; border-top:1px solid var(--line-soft)}
+.contract-grid > div:nth-child(-n+2){border-top:0}
+@media(max-width:640px){.contract-grid > div:nth-child(2){border-top:1px solid var(--line-soft)}}
+.contract-grid h4{font-size:14px; margin-bottom:8px; display:flex; gap:8px; align-items:center}
+.num{
+  font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--surface);
+  background:var(--accent); width:19px; height:19px; border-radius:4px;
+  display:grid; place-items:center; flex:none; font-weight:700;
+}
+.contract-grid p{margin:0; font-size:14px; color:var(--ink-2)}
+
+pre.block{
+  margin:0; overflow-x:auto; background:var(--surface-2); border:1px solid var(--line-soft);
+  border-radius:8px; padding:14px 16px; font-family:"JetBrains Mono",monospace;
+  font-size:12.5px; line-height:1.75; color:var(--ink-2);
+}
+pre.block .c{color:var(--muted)}
+pre.block .k{color:var(--accent-ink); font-weight:500}
+
+/* ── ownership table ────────────────────── */
+.tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:620px}
+th{
+  text-align:left; font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); font-weight:500;
+  padding:11px 16px; border-bottom:1px solid var(--line); background:var(--surface-2);
+}
+td{padding:11px 16px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.mono{font-size:12.5px}
+.owner{
+  display:inline-flex; align-items:center; gap:6px; font-family:"JetBrains Mono",monospace;
+  font-size:11.5px; font-weight:700; padding:2px 7px; border-radius:5px;
+  background:var(--accent-soft); color:var(--accent-ink); white-space:nowrap;
+}
+.owner.shared{background:var(--warn-soft); color:var(--warn)}
+.pts{font-variant-numeric:tabular-nums; text-align:right; font-family:"JetBrains Mono",monospace; font-weight:700}
+
+/* ── member cards ───────────────────────── */
+.members{display:grid; gap:18px}
+.member{overflow:hidden}
+.m-head{display:flex; gap:14px; align-items:flex-start; padding:18px 22px; border-bottom:1px solid var(--line-soft); background:var(--surface-2)}
+.badge{
+  font-family:Archivo,sans-serif; font-weight:700; font-size:15px; letter-spacing:-.01em;
+  width:38px; height:38px; border-radius:9px; display:grid; place-items:center; flex:none;
+  background:var(--accent); color:#fff;
+}
+:root[data-theme="dark"] .badge, :root:not([data-theme="light"]) .badge{color:#0E1116}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .badge{color:#fff}}
+.m-title{flex:1; min-width:0}
+.m-title h3{font-size:17px; letter-spacing:-.012em; font-weight:600}
+.m-title p{margin:2px 0 0; font-size:13.5px; color:var(--muted)}
+.m-pts{
+  font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700; color:var(--ok);
+  background:var(--ok-soft); padding:4px 9px; border-radius:6px; white-space:nowrap;
+}
+.m-body{display:grid; grid-template-columns:1.35fr 1fr; gap:0}
+@media(max-width:760px){.m-body{grid-template-columns:1fr}}
+.m-tasks{padding:18px 22px}
+.m-side{padding:18px 22px; border-left:1px solid var(--line-soft); background:var(--surface)}
+@media(max-width:760px){.m-side{border-left:0; border-top:1px solid var(--line-soft)}}
+.lbl{
+  font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); display:block; margin-bottom:9px;
+}
+ul.tasks{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px}
+ul.tasks li{display:flex; gap:10px; align-items:flex-start; font-size:14px; line-height:1.5}
+ul.tasks input{
+  margin:3px 0 0; flex:none; width:15px; height:15px; accent-color:var(--accent); cursor:pointer;
+}
+ul.tasks label{cursor:pointer; color:var(--ink-2)}
+ul.tasks input:checked + label{color:var(--muted); text-decoration:line-through}
+ul.tasks input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.t-time{font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--muted); white-space:nowrap}
+.files{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px}
+.file{
+  font-family:"JetBrains Mono",monospace; font-size:11.5px; padding:3px 7px; border-radius:5px;
+  background:var(--surface-2); border:1px solid var(--line-soft); color:var(--ink-2);
+}
+.dod{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; font-size:13.5px; color:var(--ink-2)}
+.dod li{padding-left:18px; position:relative}
+.dod li::before{content:"✓"; position:absolute; left:0; color:var(--ok); font-weight:700}
+.verify{margin-top:14px}
+.verify pre{font-size:11.5px; padding:10px 12px}
+
+/* ── gantt ──────────────────────────────── */
+.gantt{padding:20px 22px 24px; overflow-x:auto}
+.gantt-inner{min-width:640px}
+.g-scale{display:grid; grid-template-columns:88px repeat(9,1fr); gap:4px; margin-bottom:8px}
+.g-scale span{
+  font-family:"JetBrains Mono",monospace; font-size:10.5px; color:var(--muted);
+  text-align:center; padding-bottom:6px; border-bottom:1px solid var(--line-soft);
+}
+.g-scale span:first-child{border-bottom:0}
+.g-row{display:grid; grid-template-columns:88px repeat(9,1fr); gap:4px; align-items:center; margin-bottom:5px}
+.g-name{font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700; color:var(--ink-2)}
+.g-bar{
+  grid-row:1; height:26px; border-radius:5px; display:flex; align-items:center; padding:0 9px;
+  font-size:11.5px; font-weight:500; color:#fff; background:var(--accent); overflow:hidden; white-space:nowrap;
+}
+:root[data-theme="dark"] .g-bar, :root:not([data-theme="light"]) .g-bar{color:#0E1116}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .g-bar{color:#fff}}
+.g-bar.sync{background:var(--warn); }
+.g-bar.gate{background:var(--crit)}
+.g-bar.soft{background:var(--accent-soft); color:var(--accent-ink); border:1px solid var(--accent)}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:16px; font-size:12.5px; color:var(--muted)}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px}
+
+/* ── QA gates ───────────────────────────── */
+.gates{display:grid; gap:14px}
+.gate{display:grid; grid-template-columns:96px 1fr; gap:0; overflow:hidden}
+@media(max-width:640px){.gate{grid-template-columns:1fr}}
+.gate-t{
+  padding:16px; background:var(--surface-2); border-right:1px solid var(--line-soft);
+  font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700; color:var(--ink-2);
+}
+@media(max-width:640px){.gate-t{border-right:0; border-bottom:1px solid var(--line-soft)}}
+.gate-b{padding:16px 20px}
+.gate-b h4{font-size:15px; margin-bottom:4px; font-weight:600}
+.gate-b p{margin:0 0 10px; font-size:14px; color:var(--ink-2)}
+.owners{display:flex; gap:5px; flex-wrap:wrap; margin-top:10px}
+
+/* ── rubric matrix ──────────────────────── */
+.bar{height:6px; border-radius:3px; background:var(--accent); display:block}
+.bar-t{background:var(--line-soft); border-radius:3px; width:110px; overflow:hidden}
+
+/* ── pitfalls ───────────────────────────── */
+.pits{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px}
+.pit{padding:16px 18px; border-left:3px solid var(--crit)}
+.pit h4{font-size:14.5px; margin-bottom:5px; font-weight:600}
+.pit p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.pit.tip{border-left-color:var(--ok)}
+
+.progress-note{
+  font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--muted);
+  margin-top:8px; display:block;
+}
+footer{border-top:1px solid var(--line); padding-top:22px; color:var(--muted); font-size:13px}
+@media(prefers-reduced-motion:no-preference){
+  .g-bar{transition:filter .15s ease}
+}
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Day 08 · LangGraph Agentic Orchestration · Track3-DAY23-A1</div>
+    <h1>Sprint 90 phút — chia việc 5 người</h1>
+    <p class="lede">Toàn bộ lab được cắt theo <strong>ranh giới file</strong>, không phải theo tính năng — mỗi người sở hữu độc quyền một tập file, nên 5 người code song song mà không đụng nhau, không cần chờ merge. Điều kiện duy nhất: 10 phút đầu phải chốt xong contract chung.</p>
+    <div class="facts">
+      <div class="fact"><b>90′</b><span>tổng thời gian</span></div>
+      <div class="fact"><b>5</b><span>thành viên</span></div>
+      <div class="fact"><b>11</b><span>node phải wire</span></div>
+      <div class="fact"><b>7</b><span>scenario + hidden</span></div>
+      <div class="fact"><b>100</b><span>điểm rubric phủ đủ</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ═══ 1. CONTRACT ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Contract freeze</h2>
+    <span class="sec-tag">T+00 → T+10 · cả team</span>
+  </div>
+  <p class="sec-sub">M1 làm 4 việc này <em>trước tiên</em> rồi push lên nhánh <code class="mono">main</code>. Không ai được bắt đầu code trước khi contract này có trên repo — đây là thứ duy nhất khiến 5 luồng song song ráp lại được.</p>
+
+  <div class="card contract">
+    <div class="contract-grid">
+      <div>
+        <h4><span class="num">1</span> Bổ sung field vào <code class="mono">state.py</code></h4>
+        <p>Thêm 4 field bị thiếu, tất cả đều <strong>overwrite</strong> (không dùng reducer <code class="mono">add</code>) vì chỉ giá trị mới nhất mới có ý nghĩa cho routing.</p>
+      </div>
+      <div>
+        <h4><span class="num">2</span> Tách <code class="mono">nodes.py</code> thành facade</h4>
+        <p>Đây là chống-xung-đột quan trọng nhất: 3 người cùng viết node. Mỗi người một file riêng, <code class="mono">nodes.py</code> chỉ re-export nên test và <code class="mono">graph.py</code> import không đổi.</p>
+      </div>
+      <div>
+        <h4><span class="num">3</span> Chốt tên node (string)</h4>
+        <p>Routing function trả về đúng các string này, <code class="mono">add_node()</code> đăng ký đúng các string này. Sai một ký tự là graph không compile.</p>
+      </div>
+      <div>
+        <h4><span class="num">4</span> Env + deps, mọi máy</h4>
+        <p>Mỗi người tự chạy, không ai chờ ai. Nếu chỉ có 1 API key thì dùng chung key đó trong <code class="mono">.env</code> của từng máy.</p>
+      </div>
+    </div>
+    <div class="pad" style="border-top:1px solid var(--line-soft); display:grid; gap:14px">
+<pre class="block"><span class="c"># 1 — state.py : thêm vào class AgentState (total=False)</span>
+    evaluation_result: str      <span class="c"># "success" | "needs_retry"  → route_after_evaluate</span>
+    pending_question:  str      <span class="c"># câu hỏi làm rõ            → clarify</span>
+    proposed_action:   str      <span class="c"># mô tả hành động rủi ro    → approval</span>
+    approval:          dict     <span class="c"># {"approved":bool,"reviewer":str,"comment":str}</span></pre>
+<pre class="block"><span class="c"># 2 — nodes.py trở thành facade duy nhất (M1 viết, KHÔNG ai sửa nữa)</span>
+<span class="k">from</span> .nodes_core         <span class="k">import</span> intake_node, finalize_node          <span class="c"># M1</span>
+<span class="k">from</span> .nodes_classify     <span class="k">import</span> classify_node                        <span class="c"># M2</span>
+<span class="k">from</span> .nodes_generate     <span class="k">import</span> answer_node, ask_clarification_node   <span class="c"># M3</span>
+<span class="k">from</span> .nodes_tools        <span class="k">import</span> (tool_node, evaluate_node,            <span class="c"># M4</span>
+                                retry_or_fallback_node, dead_letter_node)
+<span class="k">from</span> .nodes_hitl         <span class="k">import</span> risky_action_node, approval_node      <span class="c"># M5</span>
+
+__all__ = [<span class="c">... 11 tên node ...</span>]</pre>
+<pre class="block"><span class="c"># 3 — tên node đăng ký trong graph (11 node) — BẤT BIẾN</span>
+"intake"  "classify"  "tool"     "evaluate"  "answer"    "clarify"
+"risky_action"  "approval"  "retry"  "dead_letter"  "finalize"
+
+<span class="c"># 4 — mọi máy chạy ngay:</span>
+pip install -e '.[dev]' && pip install langchain-google-genai
+cp .env.example .env   <span class="c"># điền GEMINI_API_KEY (hoặc OPENAI/ANTHROPIC)</span>
+python -c "from langgraph_agent_lab.llm import get_llm; print(get_llm().invoke('ping').content)"</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2. OWNERSHIP ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Bản đồ sở hữu file</h2>
+    <span class="sec-tag">quy tắc không-đụng-nhau</span>
+  </div>
+  <p class="sec-sub">Một file — một chủ. Muốn sửa file của người khác thì nhắn, không tự sửa. <code class="mono">nodes.py</code>, <code class="mono">metrics.py</code>, <code class="mono">cli.py</code>, <code class="mono">scenarios.py</code> là read-only với tất cả mọi người sau contract freeze.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>File</th><th>Chủ sở hữu</th><th>Nội dung phải viết</th><th style="text-align:right">Điểm</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">state.py</td><td><span class="owner">M1</span></td><td>4 field mới + quyết định reducer</td><td class="pts">15</td></tr>
+        <tr><td class="mono">routing.py</td><td><span class="owner">M1</span></td><td>4 hàm điều hướng, retry có chặn trên</td><td class="pts">—</td></tr>
+        <tr><td class="mono">graph.py</td><td><span class="owner">M1</span></td><td>StateGraph, 11 node, edge cố định + có điều kiện</td><td class="pts">15</td></tr>
+        <tr><td class="mono">nodes.py · nodes_core.py</td><td><span class="owner">M1</span></td><td>Facade re-export + <code class="mono">finalize_node</code></td><td class="pts">—</td></tr>
+        <tr><td class="mono">nodes_classify.py</td><td><span class="owner">M2</span></td><td><code class="mono">classify_node</code> — LLM structured output</td><td class="pts">15</td></tr>
+        <tr><td class="mono">data/sample/scenarios.jsonl</td><td><span class="owner">M2</span></td><td>Thêm S08–S12 kiểm tra biên</td><td class="pts">—</td></tr>
+        <tr><td class="mono">nodes_generate.py</td><td><span class="owner">M3</span></td><td><code class="mono">answer_node</code> + <code class="mono">ask_clarification_node</code> — LLM grounded</td><td class="pts">15</td></tr>
+        <tr><td class="mono">nodes_tools.py</td><td><span class="owner">M4</span></td><td>tool · evaluate · retry · dead_letter</td><td class="pts">20</td></tr>
+        <tr><td class="mono">nodes_hitl.py</td><td><span class="owner">M5</span></td><td><code class="mono">risky_action_node</code> + <code class="mono">approval_node</code></td><td class="pts">—</td></tr>
+        <tr><td class="mono">persistence.py</td><td><span class="owner">M5</span></td><td>SqliteSaver + WAL + bằng chứng resume</td><td class="pts">10</td></tr>
+        <tr><td class="mono">report.py · reports/lab_report.md</td><td><span class="owner">M5</span></td><td><code class="mono">render_report()</code> + báo cáo cuối</td><td class="pts">10</td></tr>
+        <tr><td class="mono">outputs/metrics.json</td><td><span class="owner shared">sinh ra</span></td><td>Do <code class="mono">make run-scenarios</code> tạo — không sửa tay</td><td class="pts">15</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 3. TARGET GRAPH ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Đồ thị đích</h2>
+    <span class="sec-tag">ai chịu trách nhiệm khúc nào</span>
+  </div>
+  <p class="sec-sub">Copy luôn sơ đồ này vào mục Architecture của báo cáo. Mọi nhánh đều phải kết thúc ở <code class="mono">finalize → END</code>; thiếu một nhánh là graph treo.</p>
+  <div class="card pad">
+<pre class="mermaid">flowchart LR
+  START([START]) --> intake
+  intake --> classify
+  classify -->|simple| answer
+  classify -->|tool| tool
+  classify -->|missing_info| clarify
+  classify -->|risky| risky_action
+  classify -->|error| retry
+  risky_action --> approval
+  approval -->|approved| tool
+  approval -->|rejected| clarify
+  tool --> evaluate
+  evaluate -->|success| answer
+  evaluate -->|needs_retry| retry
+  retry -->|attempt &lt; max| tool
+  retry -->|attempt >= max| dead_letter
+  answer --> finalize
+  clarify --> finalize
+  dead_letter --> finalize
+  finalize --> END([END])</pre>
+  </div>
+</section>
+
+<!-- ═══ 4. MEMBERS ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Nhiệm vụ từng người</h2>
+    <span class="sec-tag">T+10 → T+50 · song song hoàn toàn</span>
+  </div>
+  <p class="sec-sub">Mỗi thẻ có checklist (tự lưu trong trình duyệt), file được sở hữu, Definition of Done, và lệnh tự kiểm tra chạy được ngay cả khi 4 người kia chưa xong.</p>
+
+  <div class="members">
+
+    <!-- M1 -->
+    <article class="card member" data-m="m1">
+      <div class="m-head">
+        <div class="badge">M1</div>
+        <div class="m-title">
+          <h3>Graph Architect — state, routing, wiring</h3>
+          <p>Người chốt contract và là người duy nhất được ráp graph. Cũng là integrator ở giai đoạn 2.</p>
+        </div>
+        <div class="m-pts">30 đ</div>
+      </div>
+      <div class="m-body">
+        <div class="m-tasks">
+          <span class="lbl">Checklist</span>
+          <ul class="tasks">
+            <li><input type="checkbox" id="m1a"><label for="m1a"><span class="t-time">T+00–10</span> Push contract: 4 field <code class="mono">state.py</code>, facade <code class="mono">nodes.py</code>, 5 file <code class="mono">nodes_*.py</code> rỗng có stub <code class="mono">raise NotImplementedError</code> để 4 người kia clone là chạy được.</label></li>
+            <li><input type="checkbox" id="m1b"><label for="m1b"><span class="t-time">T+10–22</span> <code class="mono">routing.py</code> — 4 hàm. Dùng dict map cho <code class="mono">route_after_classify</code>, default <code class="mono">"answer"</code>. <code class="mono">route_after_retry</code> phải là <code class="mono">attempt &lt; max_attempts</code> (đọc từ state, không hard-code 3).</label></li>
+            <li><input type="checkbox" id="m1c"><label for="m1c"><span class="t-time">T+22–28</span> <code class="mono">nodes_core.py</code> — <code class="mono">finalize_node</code> trả event audit; giữ nguyên <code class="mono">intake_node</code> mẫu.</label></li>
+            <li><input type="checkbox" id="m1d"><label for="m1d"><span class="t-time">T+28–50</span> <code class="mono">graph.py</code> — <code class="mono">StateGraph(AgentState)</code>, add 11 node, edge cố định (<code class="mono">START→intake→classify</code>, <code class="mono">tool→evaluate</code>, <code class="mono">risky_action→approval</code>, <code class="mono">answer/clarify/dead_letter→finalize→END</code>), 4 <code class="mono">add_conditional_edges</code>, <code class="mono">compile(checkpointer=...)</code>.</label></li>
+            <li><input type="checkbox" id="m1e"><label for="m1e"><span class="t-time">T+50–70</span> <strong>Integrator</strong>: merge 4 nhánh, chạy <code class="mono">make test</code> → <code class="mono">make run-scenarios</code>, phân loại lỗi về đúng chủ file.</label></li>
+            <li><input type="checkbox" id="m1f"><label for="m1f"><span class="t-time">T+70–78</span> <em>Bonus</em>: xuất sơ đồ <code class="mono">graph.get_graph().draw_mermaid()</code> gửi M5 nhét vào báo cáo.</label></li>
+          </ul>
+        </div>
+        <div class="m-side">
+          <span class="lbl">File sở hữu</span>
+          <div class="files"><span class="file">state.py</span><span class="file">routing.py</span><span class="file">graph.py</span><span class="file">nodes.py</span><span class="file">nodes_core.py</span></div>
+          <span class="lbl">Definition of Done</span>
+          <ul class="dod">
+            <li><code class="mono">tests/test_routing.py</code> pass 12/12</li>
+            <li><code class="mono">tests/test_state.py</code> pass</li>
+            <li>Graph compile không lỗi với stub</li>
+            <li>Mọi nhánh chạm <code class="mono">finalize</code></li>
+          </ul>
+          <div class="verify">
+            <span class="lbl">Tự kiểm tra</span>
+            <pre class="block">pytest tests/test_routing.py \
+       tests/test_state.py -q</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- M2 -->
+    <article class="card member" data-m="m2">
+      <div class="m-head">
+        <div class="badge">M2</div>
+        <div class="m-title">
+          <h3>Classifier — LLM structured output</h3>
+          <p>Quyết định điểm số của cả bài: sai route thì mọi scenario đều fail, kể cả hidden scenario.</p>
+        </div>
+        <div class="m-pts">15 đ + 20 đ chung</div>
+      </div>
+      <div class="m-body">
+        <div class="m-tasks">
+          <span class="lbl">Checklist</span>
+          <ul class="tasks">
+            <li><input type="checkbox" id="m2a"><label for="m2a"><span class="t-time">T+10–18</span> Pydantic model <code class="mono">Classification(route: Literal[...], risk_level: Literal["low","high"], reason: str)</code>.</label></li>
+            <li><input type="checkbox" id="m2b"><label for="m2b"><span class="t-time">T+18–35</span> <code class="mono">classify_node</code> dùng <code class="mono">get_llm().with_structured_output(Classification)</code>. Prompt phải viết rõ <strong>thứ tự ưu tiên</strong> risky &gt; tool &gt; missing_info &gt; error &gt; simple, kèm 1–2 ví dụ mỗi route (few-shot), <strong>tuyệt đối không match theo ID hay câu chữ của scenario</strong>.</label></li>
+            <li><input type="checkbox" id="m2c"><label for="m2c"><span class="t-time">T+35–40</span> Fallback an toàn: bọc <code class="mono">try/except</code>, LLM lỗi → route <code class="mono">"simple"</code> + ghi <code class="mono">errors</code>, không để node ném exception làm chết graph.</label></li>
+            <li><input type="checkbox" id="m2d"><label for="m2d"><span class="t-time">T+40–50</span> Thêm 5 dòng S08–S12 vào <code class="mono">scenarios.jsonl</code> (huỷ đăng ký = risky, tra vận đơn = tool, "nó hỏng" = missing_info, service unavailable = error, hỏi chính sách = simple) rồi chạy thử độ chính xác.</label></li>
+            <li><input type="checkbox" id="m2e"><label for="m2e"><span class="t-time">T+60–75</span> Tinh chỉnh prompt theo scenario nào sai trong <code class="mono">metrics.json</code> — sửa prompt, không sửa scenario.</label></li>
+          </ul>
+        </div>
+        <div class="m-side">
+          <span class="lbl">File sở hữu</span>
+          <div class="files"><span class="file">nodes_classify.py</span><span class="file">data/sample/scenarios.jsonl</span></div>
+          <span class="lbl">Definition of Done</span>
+          <ul class="dod">
+            <li>12/12 scenario (7 gốc + 5 tự thêm) đúng route</li>
+            <li>Có <code class="mono">.with_structured_output</code> trong code</li>
+            <li>Không có <code class="mono">if scenario_id ==</code> ở bất kỳ đâu</li>
+            <li>LLM chết vẫn trả về route hợp lệ</li>
+          </ul>
+          <div class="verify">
+            <span class="lbl">Tự kiểm tra (không cần graph)</span>
+            <pre class="block">python -c "
+from langgraph_agent_lab.nodes_classify import classify_node
+for q in ['Refund this customer','lookup order 12','fix it',
+          'Timeout failure','How to reset password?']:
+    print(q,'→',classify_node({'query':q})['route'])"</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- M3 -->
+    <article class="card member" data-m="m3">
+      <div class="m-head">
+        <div class="badge">M3</div>
+        <div class="m-title">
+          <h3>Responder — sinh câu trả lời có căn cứ</h3>
+          <p>Hai node kết thúc của 3 trên 5 nhánh. Chấm điểm ở chỗ câu trả lời bám vào <code class="mono">tool_results</code>, không bịa.</p>
+        </div>
+        <div class="m-pts">15 đ</div>
+      </div>
+      <div class="m-body">
+        <div class="m-tasks">
+          <span class="lbl">Checklist</span>
+          <ul class="tasks">
+            <li><input type="checkbox" id="m3a"><label for="m3a"><span class="t-time">T+10–30</span> <code class="mono">answer_node</code>: dựng context từ <code class="mono">query</code> + <code class="mono">tool_results</code> + <code class="mono">approval</code>, gọi LLM. Prompt ràng buộc: chỉ dùng dữ kiện trong context, không có dữ kiện thì nói không có.</label></li>
+            <li><input type="checkbox" id="m3b"><label for="m3b"><span class="t-time">T+30–42</span> <code class="mono">ask_clarification_node</code>: LLM sinh <strong>một</strong> câu hỏi làm rõ cụ thể từ query mơ hồ. Trả cả <code class="mono">pending_question</code> lẫn <code class="mono">final_answer</code> — <code class="mono">metric_from_state</code> chấp nhận một trong hai, đặt cả hai cho chắc.</label></li>
+            <li><input type="checkbox" id="m3c"><label for="m3c"><span class="t-time">T+42–48</span> Xử lý nhánh bị từ chối: nếu <code class="mono">approval.approved is False</code> thì câu hỏi làm rõ phải nêu lý do bị từ chối và đề xuất phương án khác.</label></li>
+            <li><input type="checkbox" id="m3d"><label for="m3d"><span class="t-time">T+48–55</span> Mỗi node trả <code class="mono">events</code> qua <code class="mono">make_event(...)</code> — thiếu event là hụt <code class="mono">nodes_visited</code> trong metrics.</label></li>
+            <li><input type="checkbox" id="m3e"><label for="m3e"><span class="t-time">T+60–75</span> Hỗ trợ integration: sửa trường hợp câu trả lời rỗng / vượt token / bịa dữ kiện.</label></li>
+          </ul>
+        </div>
+        <div class="m-side">
+          <span class="lbl">File sở hữu</span>
+          <div class="files"><span class="file">nodes_generate.py</span></div>
+          <span class="lbl">Definition of Done</span>
+          <ul class="dod">
+            <li><code class="mono">final_answer</code> luôn khác rỗng</li>
+            <li>Có mã đơn 12345 trong câu trả lời route tool</li>
+            <li><code class="mono">pending_question</code> là câu hỏi thật, không phải câu chào</li>
+            <li>Cả 2 node đều emit event</li>
+          </ul>
+          <div class="verify">
+            <span class="lbl">Tự kiểm tra</span>
+            <pre class="block">python -c "
+from langgraph_agent_lab.nodes_generate import answer_node
+s={'query':'order status 12345','tool_results':
+   ['OK: order 12345 shipped, ETA 2 days'],'approval':None}
+print(answer_node(s)['final_answer'])"</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- M4 -->
+    <article class="card member" data-m="m4">
+      <div class="m-head">
+        <div class="badge">M4</div>
+        <div class="m-title">
+          <h3>Reliability — tool, evaluate, retry, dead letter</h3>
+          <p>Sở hữu vòng lặp retry — thứ phân biệt LangGraph với chain tuyến tính, và cũng là chỗ dễ treo vô hạn nhất.</p>
+        </div>
+        <div class="m-pts">20 đ</div>
+      </div>
+      <div class="m-body">
+        <div class="m-tasks">
+          <span class="lbl">Checklist</span>
+          <ul class="tasks">
+            <li><input type="checkbox" id="m4a"><label for="m4a"><span class="t-time">T+10–25</span> <code class="mono">tool_node</code>: đọc <code class="mono">attempt</code>; nếu <code class="mono">route == "error"</code> và <code class="mono">attempt &lt; 2</code> → trả chuỗi chứa <code class="mono">"ERROR"</code>; ngược lại trả kết quả mock có trích dữ kiện từ query (mã đơn, ID). Append vào <code class="mono">tool_results</code>.</label></li>
+            <li><input type="checkbox" id="m4b"><label for="m4b"><span class="t-time">T+25–38</span> <code class="mono">evaluate_node</code>: đặt <code class="mono">evaluation_result</code> = <code class="mono">"needs_retry"</code> / <code class="mono">"success"</code>. <em>Bonus</em>: LLM-as-judge chấm chất lượng kết quả, heuristic <code class="mono">"ERROR" in result</code> làm lớp fallback.</label></li>
+            <li><input type="checkbox" id="m4c"><label for="m4c"><span class="t-time">T+38–46</span> <code class="mono">retry_or_fallback_node</code>: <code class="mono">attempt + 1</code>, append 1 dòng vào <code class="mono">errors</code>, emit event tên node đúng <code class="mono">"retry"</code> — metrics đếm retry bằng tên event này.</label></li>
+            <li><input type="checkbox" id="m4d"><label for="m4d"><span class="t-time">T+46–52</span> <code class="mono">dead_letter_node</code>: <code class="mono">final_answer</code> giải thích đã thử N lần, đã chuyển sang hàng đợi người thật xử lý.</label></li>
+            <li><input type="checkbox" id="m4e"><label for="m4e"><span class="t-time">T+60–75</span> Kiểm chứng S07 (<code class="mono">max_attempts=1</code>) rơi vào dead letter ngay, và S05 phục hồi được sau retry — hai đầu của cùng một vòng lặp.</label></li>
+          </ul>
+        </div>
+        <div class="m-side">
+          <span class="lbl">File sở hữu</span>
+          <div class="files"><span class="file">nodes_tools.py</span></div>
+          <span class="lbl">Definition of Done</span>
+          <ul class="dod">
+            <li>S05 error → retry → thành công</li>
+            <li>S07 → dead_letter, không lặp vô hạn</li>
+            <li><code class="mono">total_retries &gt; 0</code> trong metrics</li>
+            <li><code class="mono">errors</code> có nội dung thật, không rỗng</li>
+          </ul>
+          <div class="verify">
+            <span class="lbl">Tự kiểm tra</span>
+            <pre class="block">python -c "
+from langgraph_agent_lab.nodes_tools import tool_node,evaluate_node
+s={'query':'timeout','route':'error','attempt':0,'tool_results':[]}
+r=tool_node(s); print(r['tool_results'])
+print(evaluate_node({**s,**r})['evaluation_result'])  # needs_retry"</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- M5 -->
+    <article class="card member" data-m="m5">
+      <div class="m-head">
+        <div class="badge">M5</div>
+        <div class="m-title">
+          <h3>HITL, Persistence &amp; Report</h3>
+          <p>Ba mảng nhỏ nhưng gánh 20 điểm cuối bảng, và là người viết báo cáo nộp bài.</p>
+        </div>
+        <div class="m-pts">20 đ + bonus</div>
+      </div>
+      <div class="m-body">
+        <div class="m-tasks">
+          <span class="lbl">Checklist</span>
+          <ul class="tasks">
+            <li><input type="checkbox" id="m5a"><label for="m5a"><span class="t-time">T+10–20</span> <code class="mono">nodes_hitl.py</code>: <code class="mono">risky_action_node</code> mô tả hành động + lý do cần duyệt vào <code class="mono">proposed_action</code>; <code class="mono">approval_node</code> mặc định <code class="mono">approved=True</code> để CI chạy offline, nếu <code class="mono">LANGGRAPH_INTERRUPT=true</code> thì gọi <code class="mono">interrupt()</code>.</label></li>
+            <li><input type="checkbox" id="m5b"><label for="m5b"><span class="t-time">T+20–35</span> <code class="mono">persistence.py</code>: nhánh <code class="mono">"sqlite"</code> dùng <code class="mono">SqliteSaver(conn=sqlite3.connect(path, check_same_thread=False))</code> + bật WAL. <strong>Không</strong> dùng <code class="mono">from_conn_string()</code>.</label></li>
+            <li><input type="checkbox" id="m5c"><label for="m5c"><span class="t-time">T+35–45</span> Script bằng chứng phục hồi: chạy 1 scenario với sqlite, in <code class="mono">len(list(graph.get_state_history(config)))</code>, lưu log vào <code class="mono">reports/</code>.</label></li>
+            <li><input type="checkbox" id="m5d"><label for="m5d"><span class="t-time">T+45–60</span> <code class="mono">report.py · render_report()</code>: bảng tổng hợp + bảng từng scenario + 4 mục chữ theo <code class="mono">lab_report_template.md</code>.</label></li>
+            <li><input type="checkbox" id="m5e"><label for="m5e"><span class="t-time">T+75–90</span> Viết <code class="mono">reports/lab_report.md</code>: kiến trúc, bảng reducer, bảng metrics thật, <strong>2 failure mode</strong>, bằng chứng persistence, phần mở rộng (sơ đồ mermaid của M1), kế hoạch cải tiến.</label></li>
+          </ul>
+        </div>
+        <div class="m-side">
+          <span class="lbl">File sở hữu</span>
+          <div class="files"><span class="file">nodes_hitl.py</span><span class="file">persistence.py</span><span class="file">report.py</span><span class="file">reports/lab_report.md</span></div>
+          <span class="lbl">Definition of Done</span>
+          <ul class="dod">
+            <li>S04 &amp; S06 có <code class="mono">approval_observed=true</code></li>
+            <li><code class="mono">checkpointer: sqlite</code> chạy được</li>
+            <li>State history &gt; 5 bản ghi</li>
+            <li>Báo cáo đủ 8 mục, số liệu khớp <code class="mono">metrics.json</code></li>
+          </ul>
+          <div class="verify">
+            <span class="lbl">Tự kiểm tra</span>
+            <pre class="block">python -c "
+from langgraph_agent_lab.persistence import build_checkpointer
+print(build_checkpointer('sqlite','outputs/lab.db'))"</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══ 5. TIMELINE ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Trục thời gian 90 phút</h2>
+    <span class="sec-tag">2 điểm đồng bộ bắt buộc</span>
+  </div>
+  <p class="sec-sub">Chỉ có hai lúc cả team phải dừng và gặp nhau: chốt contract ở T+10 và cổng tích hợp ở T+50. Ngoài hai mốc đó, ai làm việc người nấy.</p>
+  <div class="card gantt">
+    <div class="gantt-inner">
+      <div class="g-scale">
+        <span></span><span>0′</span><span>10′</span><span>20′</span><span>30′</span><span>40′</span><span>50′</span><span>60′</span><span>70′</span><span>80′</span>
+      </div>
+      <div class="g-row"><span class="g-name">TEAM</span>
+        <span class="g-bar sync" style="grid-column:2/3">Contract</span>
+        <span class="g-bar soft" style="grid-column:3/7">code song song</span>
+        <span class="g-bar gate" style="grid-column:7/8">Gate 1</span>
+        <span class="g-bar gate" style="grid-column:8/9">Gate 2</span>
+        <span class="g-bar sync" style="grid-column:9/11">Demo + nộp</span>
+      </div>
+      <div class="g-row"><span class="g-name">M1</span>
+        <span class="g-bar" style="grid-column:2/3">state+facade</span>
+        <span class="g-bar" style="grid-column:3/4">routing</span>
+        <span class="g-bar" style="grid-column:4/7">graph.py</span>
+        <span class="g-bar" style="grid-column:7/9">tích hợp &amp; phân lỗi</span>
+        <span class="g-bar soft" style="grid-column:9/10">mermaid</span>
+      </div>
+      <div class="g-row"><span class="g-name">M2</span>
+        <span class="g-bar soft" style="grid-column:2/3">env</span>
+        <span class="g-bar" style="grid-column:3/6">classify_node + prompt</span>
+        <span class="g-bar" style="grid-column:6/7">S08–S12</span>
+        <span class="g-bar" style="grid-column:8/9">tinh chỉnh prompt</span>
+      </div>
+      <div class="g-row"><span class="g-name">M3</span>
+        <span class="g-bar soft" style="grid-column:2/3">env</span>
+        <span class="g-bar" style="grid-column:3/5">answer_node</span>
+        <span class="g-bar" style="grid-column:5/7">clarify + events</span>
+        <span class="g-bar" style="grid-column:8/9">sửa lỗi sinh chữ</span>
+      </div>
+      <div class="g-row"><span class="g-name">M4</span>
+        <span class="g-bar soft" style="grid-column:2/3">env</span>
+        <span class="g-bar" style="grid-column:3/5">tool + evaluate</span>
+        <span class="g-bar" style="grid-column:5/7">retry + dead_letter</span>
+        <span class="g-bar" style="grid-column:8/9">kiểm S05/S07</span>
+      </div>
+      <div class="g-row"><span class="g-name">M5</span>
+        <span class="g-bar soft" style="grid-column:2/3">env</span>
+        <span class="g-bar" style="grid-column:3/4">hitl</span>
+        <span class="g-bar" style="grid-column:4/6">sqlite + resume</span>
+        <span class="g-bar" style="grid-column:6/8">report.py</span>
+        <span class="g-bar" style="grid-column:9/11">lab_report.md</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--warn)"></i>Cả team đồng bộ</span>
+        <span><i style="background:var(--accent)"></i>Việc cá nhân</span>
+        <span><i style="background:var(--crit)"></i>Cổng chất lượng</span>
+        <span><i style="background:var(--accent-soft); border:1px solid var(--accent)"></i>Việc phụ / bonus</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 6. QA GATES ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Kiểm tra chất lượng</h2>
+    <span class="sec-tag">3 cổng · không qua thì không đi tiếp</span>
+  </div>
+  <p class="sec-sub">Mỗi cổng có lệnh chạy được và tiêu chí đỗ/trượt rõ ràng. Trượt cổng nào thì người sở hữu file liên quan sửa — cột chủ sở hữu ghi sẵn ai chịu trách nhiệm.</p>
+  <div class="gates">
+
+    <article class="card gate">
+      <div class="gate-t">GATE 1<br>T+50</div>
+      <div class="gate-b">
+        <h4>Unit &amp; compile — graph đứng được</h4>
+        <p>Chạy sau khi M1 merge 4 nhánh. Mục tiêu: chương trình chạy hết một lượt, chưa cần đúng hết.</p>
+        <pre class="block">make lint && pytest tests/test_routing.py tests/test_state.py tests/test_metrics.py -q
+python -c "from langgraph_agent_lab.graph import build_graph; build_graph(); print('compiled')"</pre>
+        <p style="margin-top:10px"><strong>Đỗ khi:</strong> lint sạch · 3 file test pass toàn bộ · graph compile · không còn <code class="mono">NotImplementedError</code> nào trong <code class="mono">src/</code> (kiểm bằng <code class="mono">grep -rn "TODO(student)" src/</code> ra rỗng).</p>
+        <div class="owners"><span class="owner">M1</span><span class="owner">M2</span><span class="owner">M3</span><span class="owner">M4</span><span class="owner">M5</span></div>
+      </div>
+    </article>
+
+    <article class="card gate">
+      <div class="gate-t">GATE 2<br>T+70</div>
+      <div class="gate-b">
+        <h4>Hành vi end-to-end — đúng route, đúng số</h4>
+        <p>Cổng nặng điểm nhất. Chạy thật cả 12 scenario, soi từng dòng trong <code class="mono">metrics.json</code>.</p>
+        <pre class="block">make run-scenarios && make grade-local
+python -c "
+import json; r=json.load(open('outputs/metrics.json'))
+print('success_rate', r['success_rate'])
+for m in r['scenario_metrics']:
+    if not m['success']: print('FAIL', m['scenario_id'], m['expected_route'],'≠',m['actual_route'])"</pre>
+        <p style="margin-top:10px"><strong>Đỗ khi:</strong> <code class="mono">success_rate = 1.0</code> · <code class="mono">total_scenarios ≥ 12</code> · <code class="mono">total_retries &gt; 0</code> · <code class="mono">total_interrupts ≥ 2</code> · S04/S06 có <code class="mono">approval_observed=true</code> · S07 kết thúc ở dead_letter · không scenario nào chạy quá 30 giây.</p>
+        <p><strong>Trượt thì ai sửa:</strong> sai route → M2 sửa prompt · <code class="mono">final_answer</code> rỗng → M3 · retry sai/treo → M4 · thiếu approval → M5 · graph treo hoặc thiếu nhánh → M1.</p>
+        <div class="owners"><span class="owner">M1</span><span class="owner">M2</span><span class="owner">M4</span></div>
+      </div>
+    </article>
+
+    <article class="card gate">
+      <div class="gate-t">GATE 3<br>T+88</div>
+      <div class="gate-b">
+        <h4>Nộp bài — đối chiếu rubric</h4>
+        <p>Duyệt chéo: mỗi người đọc file của người bên cạnh (M1→M2→M3→M4→M5→M1) trong 5 phút, tìm 3 thứ chấm điểm.</p>
+        <pre class="block"><span class="c"># 3 thứ giám khảo tìm — phải grep ra được</span>
+grep -rn "with_structured_output" src/     <span class="c"># M2: LLM phân loại</span>
+grep -rn "get_llm()"              src/     <span class="c"># M2+M3: LLM thật, không hardcode</span>
+grep -rn "max_attempts"    src/routing.py  <span class="c"># M1: retry có chặn trên</span>
+grep -rn "scenario_id ==" src/             <span class="c"># PHẢI RỖNG — hard-code là dưới 60đ</span></pre>
+        <p style="margin-top:10px"><strong>Đỗ khi:</strong> 3 lệnh đầu có kết quả, lệnh cuối rỗng · <code class="mono">reports/lab_report.md</code> đủ 8 mục · có ít nhất 1 bonus kèm bằng chứng · mỗi người nói được 1 route và 1 failure mode khi demo.</p>
+        <div class="owners"><span class="owner">M5</span><span class="owner shared">duyệt chéo</span></div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══ 7. RUBRIC MATRIX ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Phủ rubric</h2>
+    <span class="sec-tag">100/100 có chủ</span>
+  </div>
+  <p class="sec-sub">Không hạng mục nào vô chủ, không hạng mục nào hai chủ. Cột cuối là cổng chứng minh hạng mục đó đã đạt.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Hạng mục rubric</th><th style="text-align:right">Điểm</th><th>Chủ</th><th>Chứng minh tại</th></tr></thead>
+      <tbody>
+        <tr><td>Kiến trúc &amp; state schema</td><td class="pts">15</td><td><span class="owner">M1</span></td><td>Gate 1 · <code class="mono">test_state.py</code></td></tr>
+        <tr><td>Dựng graph &amp; đấu dây</td><td class="pts">15</td><td><span class="owner">M1</span></td><td>Gate 1 · compile + mermaid</td></tr>
+        <tr><td>Tích hợp LLM</td><td class="pts">15</td><td><span class="owner">M2</span> <span class="owner">M3</span></td><td>Gate 3 · grep <code class="mono">structured_output</code></td></tr>
+        <tr><td>Hành vi graph (route, retry, HITL)</td><td class="pts">20</td><td><span class="owner">M2</span> <span class="owner">M4</span> <span class="owner">M5</span></td><td>Gate 2 · <code class="mono">success_rate=1.0</code></td></tr>
+        <tr><td>Persistence &amp; recovery</td><td class="pts">10</td><td><span class="owner">M5</span></td><td>Gate 3 · log state history</td></tr>
+        <tr><td>Metrics &amp; tests</td><td class="pts">15</td><td><span class="owner">M1</span> <span class="owner">M4</span></td><td>Gate 2 · <code class="mono">make grade-local</code></td></tr>
+        <tr><td>Báo cáo &amp; demo</td><td class="pts">10</td><td><span class="owner">M5</span></td><td>Gate 3 · <code class="mono">lab_report.md</code></td></tr>
+        <tr><td><em>Bonus: mermaid + SQLite + LLM-as-judge</em></td><td class="pts">→90+</td><td><span class="owner">M1</span> <span class="owner">M4</span> <span class="owner">M5</span></td><td>mục 7 của báo cáo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ 8. PITFALLS ═══ -->
+<section>
+  <div class="sec-head">
+    <h2>Bẫy đã biết</h2>
+    <span class="sec-tag">rút từ README của lab</span>
+  </div>
+  <div class="pits">
+    <div class="card pit"><h4>Retry không chặn trên</h4><p>Thiếu <code class="mono">attempt &lt; max_attempts</code> trong <code class="mono">route_after_retry</code> là graph quay vô hạn ở S05/S07 và giết luôn hạn mức API. <strong>M4 + M1</strong> phải test S07 trước Gate 2.</p></div>
+    <div class="card pit"><h4>Nhánh không chạm finalize</h4><p>Mọi nhánh phải về <code class="mono">finalize → END</code>. Thiếu một cạnh là scenario đó treo im lặng chứ không báo lỗi. <strong>M1</strong> đếm đủ 4 cạnh vào finalize.</p></div>
+    <div class="card pit"><h4>Parse text thay vì structured output</h4><p>Bóc route bằng regex sẽ vỡ ở hidden scenario và mất tới 15 điểm. Bắt buộc <code class="mono">.with_structured_output()</code>. <strong>M2</strong>.</p></div>
+    <div class="card pit"><h4>SqliteSaver sai API</h4><p><code class="mono">langgraph-checkpoint-sqlite</code> 3.x không còn <code class="mono">from_conn_string()</code> dùng như context manager — phải truyền <code class="mono">conn=sqlite3.connect(...)</code>. <strong>M5</strong>.</p></div>
+    <div class="card pit"><h4>Thiếu field trong state</h4><p><code class="mono">evaluation_result</code>, <code class="mono">pending_question</code>, <code class="mono">proposed_action</code>, <code class="mono">approval</code> không có sẵn. Node trả về field chưa khai báo thì LangGraph lặng lẽ bỏ qua và routing đọc ra <code class="mono">None</code>.</p></div>
+    <div class="card pit tip"><h4>Quy tắc merge</h4><p>Mỗi người một nhánh <code class="mono">feat/m&lt;n&gt;-&lt;file&gt;</code>, chỉ commit file mình sở hữu, không format lại file người khác. Xung đột duy nhất còn có thể xảy ra là <code class="mono">scenarios.jsonl</code> — vì vậy chỉ M2 được đụng.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>Kế hoạch bám theo <code class="mono">docs/RUBRIC.md</code> và <code class="mono">docs/LAB_GUIDE.md</code> của repo. Checklist tự lưu trong trình duyệt của bạn.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  var KEY = "day08-team-plan-v1";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { saved = {}; }
+
+  var boxes = document.querySelectorAll('ul.tasks input[type=checkbox]');
+  boxes.forEach(function(b){
+    if (saved[b.id]) b.checked = true;
+    b.addEventListener('change', function(){
+      saved[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+      paint();
+    });
+  });
+
+  function paint(){
+    document.querySelectorAll('.member').forEach(function(card){
+      var all = card.querySelectorAll('input[type=checkbox]');
+      var done = card.querySelectorAll('input[type=checkbox]:checked').length;
+      var note = card.querySelector('.progress-note');
+      if (!note){
+        note = document.createElement('span');
+        note.className = 'progress-note';
+        card.querySelector('.m-tasks').appendChild(note);
+      }
+      note.textContent = done + "/" + all.length + " việc xong";
+    });
+  }
+  paint();
+})();
+</script>
