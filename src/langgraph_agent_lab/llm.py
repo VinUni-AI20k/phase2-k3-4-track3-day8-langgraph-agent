@@ -12,9 +12,15 @@ Usage in nodes:
 from __future__ import annotations
 
 import os
+from pathlib import Path
+from typing import Any
+
+from dotenv import load_dotenv
+
+REPOSITORY_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
-def get_llm(model: str | None = None, temperature: float = 0.0):
+def get_llm(model: str | None = None, temperature: float = 0.0) -> Any:  # noqa: ANN401
     """Create an LLM client from environment configuration.
 
     Checks for API keys in this order:
@@ -24,6 +30,7 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
 
     Override model with the `model` parameter or LLM_MODEL env var.
     """
+    load_dotenv(REPOSITORY_ENV_FILE)
     if os.getenv("GEMINI_API_KEY"):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
