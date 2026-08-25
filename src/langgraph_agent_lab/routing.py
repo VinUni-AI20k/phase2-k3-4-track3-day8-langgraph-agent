@@ -12,29 +12,36 @@ from .state import AgentState
 def route_after_classify(state: AgentState) -> str:
     """Map classified route to the next graph node.
 
-    Mapping:
-    - "simple"       → "answer"
-    - "tool"         → "tool"
-    - "missing_info" → "clarify"
-    - "risky"        → "risky_action"
-    - "error"        → "retry"
-    - unknown/default → "answer"
-
-    Hint: use a dict mapping for clean implementation.
+    Returns node name based on route type:
+    - simple → answer
+    - tool → tool
+    - missing_info → clarify
+    - risky → risky_action
+    - error → retry
+    - unknown/default → answer
     """
-    raise NotImplementedError("TODO(student): implement route mapping after classify")
+    route = state.get("route", "")
+    mapping = {
+        "simple": "answer",
+        "tool": "tool",
+        "missing_info": "clarify",
+        "risky": "risky_action",
+        "error": "retry",
+    }
+    return mapping.get(route, "answer")
 
 
 def route_after_evaluate(state: AgentState) -> str:
     """Decide if tool result is satisfactory or needs retry.
 
-    This is the 'done?' check that creates the retry loop —
-    a key LangGraph advantage over linear LCEL chains.
-
-    - If evaluation_result == "needs_retry" → "retry"
-    - Otherwise → "answer"
+    Returns node name:
+    - needs_retry → retry
+    - success/other → answer
     """
-    raise NotImplementedError("TODO(student): implement evaluate routing for retry loop")
+    evaluation_result = state.get("evaluation_result", "")
+    if evaluation_result == "needs_retry":
+        return "retry"
+    return "answer"
 
 
 def route_after_retry(state: AgentState) -> str:
@@ -45,7 +52,11 @@ def route_after_retry(state: AgentState) -> str:
     - If attempt < max_attempts → "tool" (try again)
     - If attempt >= max_attempts → "dead_letter" (give up, escalate)
     """
-    raise NotImplementedError("TODO(student): implement bounded retry routing")
+    attempt = state.get("attempt", 0)
+    max_attempts = state.get("max_attempts", 3)
+    if attempt < max_attempts:
+        return "tool"
+    return "dead_letter"
 
 
 def route_after_approval(state: AgentState) -> str:
@@ -54,4 +65,7 @@ def route_after_approval(state: AgentState) -> str:
     - If approved → "tool" (proceed with risky action)
     - If rejected → "clarify" (ask user for alternative)
     """
-    raise NotImplementedError("TODO(student): implement approval routing")
+    approval = state.get("approval")
+    if approval and approval.get("approved", False):
+        return "tool"
+    return "clarify"

@@ -41,8 +41,10 @@ class ApprovalDecision(BaseModel):
 class AgentState(TypedDict, total=False):
     """LangGraph state.
 
-    TODO(student): decide which fields should be append-only and which should be overwritten.
-    The current annotations give a safe starting point for auditability.
+    Append-only fields: messages, tool_results, errors, events
+    Overwrite fields: thread_id, scenario_id, query, route, risk_level, attempt,
+                     max_attempts, final_answer, evaluation_result, pending_question,
+                     proposed_action, approval
     """
 
     thread_id: str
@@ -53,9 +55,14 @@ class AgentState(TypedDict, total=False):
     attempt: int
     max_attempts: int
     final_answer: str | None
-    # TODO(student): you will need additional fields for clarification, risky actions,
-    # approval decisions, and retry-loop gating. Add them as you implement nodes.
-    # Hint: check what your nodes return and what your routing functions read.
+    # Retry loop gating
+    evaluation_result: str | None
+    # Clarification flow
+    pending_question: str | None
+    # Risky action flow
+    proposed_action: str | None
+    approval: ApprovalDecision | None
+    # Append-only fields
     messages: Annotated[list[str], add]
     tool_results: Annotated[list[str], add]
     errors: Annotated[list[str], add]
@@ -90,6 +97,10 @@ def initial_state(scenario: Scenario) -> AgentState:
         "attempt": 0,
         "max_attempts": scenario.max_attempts,
         "final_answer": None,
+        "evaluation_result": None,
+        "pending_question": None,
+        "proposed_action": None,
+        "approval": None,
         "messages": [],
         "tool_results": [],
         "errors": [],

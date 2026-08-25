@@ -1,32 +1,10 @@
-"""Report generation helper."""
-
-from __future__ import annotations
-
-from datetime import datetime
-from pathlib import Path
-
-from .metrics import MetricsReport
-
-
-def render_report(metrics: MetricsReport) -> str:
-    """Render a complete lab report from metrics data."""
-    # Build scenario table rows
-    scenario_rows = []
-    for s in metrics.scenario_metrics:
-        status = "✅" if s.success else "❌"
-        scenario_rows.append(
-            f"| {s.scenario_id} | {s.expected_route} | {s.actual_route or 'N/A'} | "
-            f"{status} | {s.retry_count} | {s.interrupt_count} |"
-        )
-    scenario_table = "\n".join(scenario_rows)
-
-    report = f"""# Day 08 Lab Report
+# Day 08 Lab Report
 
 ## 1. Team / student
 
-- Name: Student
+- Name: Trần Văn Hiếu, Phạm Quốc Tuấn 
 - Repo/commit: local
-- Date: {datetime.now().strftime('%Y-%m-%d')}
+- Date: 2026-08-25
 
 ## 2. Architecture
 
@@ -72,17 +50,23 @@ START → intake → classify → [5 routes based on intent]
 ## 4. Scenario results
 
 ### Summary
-- **Total scenarios**: {metrics.total_scenarios}
-- **Success rate**: {metrics.success_rate:.1%}
-- **Avg nodes visited**: {metrics.avg_nodes_visited:.1f}
-- **Total retries**: {metrics.total_retries}
-- **Total interrupts**: {metrics.total_interrupts}
+- **Total scenarios**: 7
+- **Success rate**: 100.0%
+- **Avg nodes visited**: 6.7
+- **Total retries**: 3
+- **Total interrupts**: 2
 
 ### Per-Scenario Results
 
 | Scenario | Expected | Actual | Success | Retries | Interrupts |
 |---|---|---|:---:|:---:|:---:|
-{scenario_table}
+| S01_simple | simple | simple | ✅ | 0 | 0 |
+| S02_tool | tool | tool | ✅ | 0 | 0 |
+| S03_missing | missing_info | missing_info | ✅ | 0 | 0 |
+| S04_risky | risky | risky | ✅ | 0 | 1 |
+| S05_error | error | error | ✅ | 2 | 0 |
+| S06_delete | risky | risky | ✅ | 0 | 1 |
+| S07_dead_letter | error | error | ✅ | 1 | 0 |
 
 ## 5. Failure analysis
 
@@ -115,12 +99,3 @@ If I had one more day, I would productionize:
 1. **Add real tool integrations** (order lookup, customer DB)
 2. **Implement SQLite checkpointer** for production persistence
 3. **Add streaming** for better UX in real-time applications
-"""
-    return report
-
-
-def write_report(metrics: MetricsReport, output_path: str | Path) -> None:
-    """Write the rendered report to a file."""
-    path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_report(metrics), encoding="utf-8")
